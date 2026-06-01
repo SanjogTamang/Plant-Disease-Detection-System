@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #27ae60;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            background: #000;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .upload-box {
+            border: 3px dashed #ecf0f1;
+            border-radius: 10px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            font-size: 0.95em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #bdc3c7;
+        }
+
+        .result {
+            background: #f8f9fa;
+            border-left: 4px solid #27ae60;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .result-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .disease-name {
+            color: #27ae60;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .confidence {
+            color: #3498db;
+            font-weight: 700;
+        }
+
+        .spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        .spinner-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #27ae60;
+            margin: 0 5px;
+            animation: bounce 1.4s infinite;
+        }
+
+        .spinner-dot:nth-child(1) { animation-delay: -0.32s; }
+        .spinner-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { opacity: 0.2; transform: scale(1); }
+            40% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .error {
+            background: #fdeae8;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            color: #c0392b;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            border: 2px solid #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #27ae60;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                min-width: 100%;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌿 Plant Disease Detection</h1>
+            <p>Real-time disease diagnosis using AI</p>
+        </div>
+
+        <div class="content">
+            <!-- Image Upload Section -->
+            <div class="section">
+                <div class="section-title">📸 Upload Leaf Image</div>
+                
+                <div id="uploadBox" class="upload-box">
+                    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                    <div onclick="document.getElementById('imageInput').click();" style="cursor: pointer; text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
+                        <p style="color: #27ae60; font-weight: 600; margin-bottom: 5px;">Click to select image</p>
+                        <p style="color: #7f8c8d; font-size: 0.9em;">or drag & drop here</p>
+                    </div>
+                </div>
+                
+                <div id="imagePreview" style="display: none; margin-top: 20px;">
+                    <img id="preview" style="max-width: 100%; border-radius: 10px; max-height: 400px;">
+                    <button class="btn-secondary" onclick="clearImage()" style="width: 100%; margin-top: 10px;">Clear Image</button>
+                </div>
+                
+                <div class="controls" style="margin-top: 15px;">
+                    <button class="btn-primary" id="uploadBtn" onclick="predictImage()" disabled>
+                        🔍 Predict Disease
+                    </button>
+                </div>
+            </div>
+
+            <!-- Prediction Section -->
+            <div class="section">
+                <div class="section-title">🔍 Prediction</div>
+                
+                <div class="spinner" id="spinner">
+                    <div class="spinner-dot"></div>
+                    <div class="spinner-dot"></div>
+                    <div class="spinner-dot"></div>
+                    <p style="margin-top: 10px; color: #27ae60;">Analyzing leaf...</p>
+                </div>
+
+                <div class="result" id="result">
+                    <div class="result-row">
+                        <span class="result-label">Disease</span>
+                        <span class="result-value disease-name" id="diseaseName">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Confidence</span>
+                        <span class="result-value confidence" id="confidence">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Leaf Detected</span>
+                        <span class="result-value" id="leafCount">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Response Time</span>
+                        <span class="result-value" id="responseTime">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Smoothing Frames</span>
+                        <span class="result-value" id="smoothingFrames">-</span>
+                    </div>
+                </div>
+
+                <div class="error" id="error"></div>
+
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Confidence %</div>
+                        <div class="stat-value" id="confidencePercent">0%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Leaves Found</div>
+                        <div class="stat-value" id="leavesFound">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="section">
+                <div class="section-title">📱 Share Online</div>
+                <p style="margin-bottom: 15px; color: #7f8c8d; font-size: 0.95em;">
+                    Generate QR code to share with mobile users:
+                </p>
+                <div id="urlDisplay" style="background: #e8f5e9; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none;">
+                    <div style="font-size: 0.85em; color: #558b2f; font-weight: 600; margin-bottom: 5px;">🌐 Public URL:</div>
+                    <div id="publicUrl" style="color: #2e7d32; font-weight: 600; word-break: break-all; cursor: pointer;" onclick="copyToClipboard()">
+                        Loading...
+                    </div>
+                    <div style="font-size: 0.8em; color: #558b2f; margin-top: 8px;">👆 Click to copy to clipboard</div>
+                </div>
+                <button class="btn-primary" onclick="showQRCode()" style="width: 100%; margin-bottom: 10px;">Generate QR Code</button>
+                <button class="btn-secondary" onclick="copyPublicUrl()" style="width: 100%; display: none;" id="copyBtn">📋 Copy URL</button>
+                <div id="qrContainer" style="text-align: center; margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadBox = document.getElementById('uploadBox');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('preview');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const result = document.getElementById('result');
+        const spinner = document.getElementById('spinner');
+        const error = document.getElementById('error');
+
+        // Handle file input change
+        imageInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.style.background = '#f0f8f0';
+            uploadBox.style.borderColor = '#27ae60';
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.style.background = '#f8f9fa';
+            uploadBox.style.borderColor = '#ecf0f1';
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.style.background = '#f8f9fa';
+            uploadBox.style.borderColor = '#ecf0f1';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            const file = imageInput.files[0];
+            if (!file) return;
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+
+            // Read and display preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+                uploadBtn.disabled = false;
+                hideError();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            imageInput.value = '';
+            imagePreview.style.display = 'none';
+            uploadBtn.disabled = true;
+            result.classList.remove('show');
+        }
+
+        async function predictImage() {
+            if (!imageInput.files[0]) {
+                showError('Please select an image first');
+                return;
+            }
+
+            spinner.classList.add('show');
+            result.classList.remove('show');
+            hideError();
+
+            try {
+                const formData = new FormData();
+                formData.append('image', imageInput.files[0]);
+
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResult(data);
+                } else {
+                    showError(data.error || 'Prediction failed');
+                }
+            } catch (err) {
+                showError('Error: ' + err.message);
+            } finally {
+                spinner.classList.remove('show');
+            }
+        }
+
+        function displayResult(data) {
+            document.getElementById('diseaseName').textContent = data.disease.replace(/___/g, ' - ');
+            document.getElementById('confidence').textContent = data.confidence.toFixed(2) + '%';
+            document.getElementById('leafCount').textContent = data.leaf_count + ' detected';
+            document.getElementById('responseTime').textContent = data.response_time_ms.toFixed(1) + ' ms';
+            document.getElementById('smoothingFrames').textContent = data.smoothing_frames;
+            document.getElementById('confidencePercent').textContent = data.confidence.toFixed(0) + '%';
+            document.getElementById('leavesFound').textContent = data.leaf_count;
+
+            result.classList.add('show');
+        }
+
+        function showError(msg) {
+            error.textContent = '❌ ' + msg;
+            error.classList.add('show');
+        }
+
+        function hideError() {
+            error.classList.remove('show');
+        }
+
+        async function showQRCode() {
+            const container = document.getElementById('qrContainer');
+            container.innerHTML = '<p style="color: #27ae60; font-weight: 600;">Loading QR code...</p>';
+
+            try {
+                const response = await fetch('/qr-code');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    container.innerHTML = '<img src="' + url + '" style="max-width: 300px; border-radius: 10px; border: 2px solid #27ae60;">';
+                } else {
+                    container.innerHTML = '<p style="color: #e74c3c;">Failed to generate QR code</p>';
+                }
+            } catch (err) {
+                container.innerHTML = '<p style="color: #e74c3c;">Error: ' + err.message + '</p>';
+            }
+        }
+
+        // Load public URL on page load
+        async function loadPublicUrl() {
+            try {
+                const response = await fetch('/api/public-url');
+                const data = await response.json();
+                
+                const urlDisplay = document.getElementById('urlDisplay');
+                const publicUrl = document.getElementById('publicUrl');
+                const copyBtn = document.getElementById('copyBtn');
+                
+                publicUrl.textContent = data.url;
+                publicUrl.dataset.url = data.url;
+                urlDisplay.style.display = 'block';
+                
+                if (data.active) {
+                    // Auto-generate QR code for ngrok URL
+                    setTimeout(() => {
+                        showQRCode();
+                    }, 500);
+                    copyBtn.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error loading public URL:', err);
+            }
+        }
+
+        function copyToClipboard() {
+            const url = document.getElementById('publicUrl').dataset.url;
+            if (url) {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('URL copied to clipboard! 📋');
+                }).catch(err => {
+                    console.error('Copy failed:', err);
+                });
+            }
+        }
+
+        function copyPublicUrl() {
+            copyToClipboard();
+        }
+
+        // Load URL and QR code on page load
+        window.addEventListener('load', loadPublicUrl);
+    </script>
+</body>
+</html>
