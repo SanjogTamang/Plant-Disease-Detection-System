@@ -103,3 +103,4 @@ build/
 .env
 secrets.json
 config.local.py
+.env.example
