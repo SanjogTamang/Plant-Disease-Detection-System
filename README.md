@@ -533,20 +533,3 @@ For issues or questions:
 3. Test in different browser
 4. Check console for error messages (F12)
 
-## Nepali Language Support
-
-### Nepali Translations Included:
-- रोग (Rog) - Disease
-- स्वस्थ (Swasth) - Healthy
-- तपाईंको बिरुवा (Tapai-ko Biruwa) - Your plant
-- गलियो (Galiyo) - Blight
-- खरामेलो (Kharamelo) - Scab
-
-### Customization:
-Edit `NEPALI_TRANSLATIONS` dict in `app.py` to add more disease names or translations.
-
----
-
-**Version:** 1.0  
-**Last Updated:** May 2026  
-**Model:** MobileNetV2 (ImageNet pre-trained)
